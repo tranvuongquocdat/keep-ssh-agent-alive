@@ -1,0 +1,35 @@
+name: Bug report
+description: Something broke or behaved strangely
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Describe what went wrong. A screenshot of the menu helps a lot.
+      placeholder: I pressed ctrl-x on a session and...
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How can we make it happen again?
+      placeholder: |
+        1. Run run_claude
+        2. Create a session named ...
+        3. Press ...
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS and terminal
+      placeholder: e.g. Ubuntu 24.04 over SSH from iTerm2, or Windows + MSYS2
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: tmux and fzf versions
+      description: Paste the output of `tmux -V; fzf --version`
+      placeholder: tmux 3.4, 0.55.0

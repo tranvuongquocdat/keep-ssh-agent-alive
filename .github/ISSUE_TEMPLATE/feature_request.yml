@@ -1,0 +1,18 @@
+name: Feature request
+description: An idea to make the menu better
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What's annoying or missing today?
+      placeholder: Every time I ..., I have to ...
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like instead?
+      description: Describe how it should look or behave in the menu. Rough sketches welcome.
+    validations:
+      required: true

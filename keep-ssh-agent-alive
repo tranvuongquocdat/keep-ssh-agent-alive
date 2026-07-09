@@ -1,0 +1,212 @@
+#!/usr/bin/env bash
+#
+# A friendly menu on top of tmux: pick a session, watch it live, jump in.
+# Sessions survive disconnects, so closing your laptop won't kill your work.
+
+socket='keep-ssh-agent-alive'
+config="${XDG_CONFIG_HOME:-$HOME/.config}/keep-ssh-agent-alive/config"
+default_command='claude'
+session_prefix='agent'
+language='en'
+mouse='off'
+# shellcheck source=/dev/null
+[ -f "$config" ] && . "$config"
+
+for dep in tmux fzf; do
+  command -v "$dep" >/dev/null 2>&1 || {
+    echo "Missing '$dep'. Run install.sh first." >&2
+    exit 1
+  }
+done
+[ -t 1 ] || { echo "This needs an interactive terminal." >&2; exit 1; }
+
+# Sessions live on this tool's own tmux server, so the status bar and the F12
+# binding below never touch the user's regular tmux setup.
+tm() { command tmux -L "$socket" "$@"; }
+prog=$(basename "$0")
+accent=173 # 256-color approximation of the coral in the design
+
+# --- interface language (picked during install; language= in the config) ----
+if [ "$language" = 'vi' ]; then
+  m_new='Tạo phiên mới'; m_open='Mở phiên'; m_rename='Đổi tên'; m_stop='Dừng phiên'
+  m_back='Quay lại'; m_attached='đang mở'; m_idle='chờ'; m_preview='xem trước'
+  m_keys_main='enter mở · tab hành động · ctrl-n tạo mới · ctrl-x dừng · esc thoát'
+  m_keys_action='enter chọn · esc quay lại'
+  m_name_q='Tên phiên'; m_cmd_q='Lệnh chạy'
+  m_bad_name='Tên không hợp lệ (không dùng dấu chấm hoặc hai chấm, không để trống).'
+  m_exists='đã tồn tại.'
+  m_stop_confirm='Tiến trình bên trong sẽ bị tắt. [y/N]:'
+  m_rename_q='Tên mới cho'
+  m_return='quay về menu · tiến trình vẫn chạy'
+  m_empty='(chưa có gì chạy)'
+else
+  m_new='New session'; m_open='Open session'; m_rename='Rename'; m_stop='Stop session'
+  m_back='Back'; m_attached='attached'; m_idle='idle'; m_preview='preview'
+  m_keys_main='enter open · tab actions · ctrl-n new · ctrl-x stop · esc quit'
+  m_keys_action='enter select · esc back'
+  m_name_q='Session name'; m_cmd_q='Command'
+  m_bad_name='Invalid name (no dots or colons, not empty).'
+  m_exists='already exists.'
+  m_stop_confirm='The program running inside will be terminated. [y/N]:'
+  m_rename_q='New name for'
+  m_return='back to menu · keeps running'
+  m_empty='(nothing running yet)'
+fi
+
+# --- in-session status bar: the way out is always written on screen ---------
+themed=''
+ensure_theme() {
+  [ -n "$themed" ] && return
+  tm list-sessions >/dev/null 2>&1 || return
+  themed=1
+  tm set -g status on
+  tm set -g status-interval 5
+  tm set -g status-style 'bg=colour236,fg=colour250'
+  tm set -g status-left-length 40
+  tm set -g status-right-length 60
+  tm set -g status-left "#[fg=colour${accent},bold] ✳ #[fg=colour255]#S #[fg=colour244]· #{?#{pane_start_command},#{pane_start_command},#{pane_current_command}} "
+  tm set -g status-right "#[fg=colour${accent},bold]F12#[fg=colour250] $m_return "
+  tm set -g window-status-format ''
+  tm set -g window-status-current-format ''
+  tm bind -T root F12 detach-client
+  if [ "$mouse" = 'on' ]; then
+    tm set -g mouse on
+    for ev in MouseDown1Status MouseDown1StatusLeft MouseDown1StatusRight MouseDown1StatusDefault; do
+      tm bind -T root "$ev" detach-client
+    done
+  fi
+}
+
+# tmux target: switch instead of nesting when we're already inside our server
+open() {
+  ensure_theme
+  case ${TMUX:-} in
+    */"$socket",*) tm switch-client -t "=$1" ;;
+    '') tm attach -t "=$1" ;;
+    *) TMUX='' tm attach -t "=$1" ;; # inside someone else's tmux
+  esac
+}
+
+next_name() {
+  local i=1
+  while tm has-session -t "=$session_prefix-$i" 2>/dev/null; do i=$((i + 1)); done
+  printf '%s-%s' "$session_prefix" "$i"
+}
+
+create() {
+  local name cmd def
+  def=$(next_name)
+  read -r -p "$m_name_q [$def]: " name </dev/tty
+  name=${name:-$def}
+  case $name in *[.:]* | '') echo "$m_bad_name"; sleep 1; return ;; esac
+  if tm has-session -t "=$name" 2>/dev/null; then
+    echo "'$name' $m_exists"; sleep 1; return
+  fi
+  read -r -p "$m_cmd_q [${default_command:-shell}]: " cmd </dev/tty
+  cmd=${cmd:-$default_command}
+  if [ -n "$cmd" ]; then tm new-session -d -s "$name" "$cmd"
+  else tm new-session -d -s "$name"; fi
+  themed='' # a fresh server may have just started; re-apply the theme
+  open "$name"
+}
+
+stop() {
+  local a
+  read -r -p "$m_stop '$1'? $m_stop_confirm " a </dev/tty
+  case $a in [yY]*) tm kill-session -t "=$1" ;; esac
+}
+
+rename() {
+  local new
+  read -r -p "$m_rename_q '$1': " new </dev/tty
+  [ -z "$new" ] && return
+  case $new in *[.:]*) echo "$m_bad_name"; sleep 1; return ;; esac
+  tm rename-session -t "=$1" "$new"
+}
+
+# One row per session: name, then a status dot and what it is running.
+sessions() {
+  printf '__NEW__\t\033[38;5;%sm+ %s\033[0m\n' "$accent" "$m_new"
+  tm list-sessions -F "#{session_name}	#{session_attached}" 2>/dev/null |
+    while IFS=$'\t' read -r name att; do
+      IFS=$'\t' read -r start current < <(
+        tm display-message -p -t "=$name" $'#{pane_start_command}\t#{pane_current_command}'
+      )
+      if [ -n "$start" ]; then
+        dot=$'\033[32m●\033[0m' label=${start%% *}
+      else
+        case $current in
+          '' | bash | zsh | sh | fish | dash | ksh) dot=$'\033[2m○\033[0m' label=$m_idle ;;
+          *) dot=$'\033[32m●\033[0m' label=$current ;;
+        esac
+      fi
+      [ "${att:-0}" != 0 ] && label="$label · $m_attached"
+      printf '%s\t%-14s %s \033[2m%s\033[0m\n' "$name" "$name" "$dot" "$label"
+    done
+  return 0
+}
+
+# --- fzf look & feel ---------------------------------------------------------
+fzf_theme=(
+  --ansi --no-sort --reverse --cycle --height=100%
+  --border=rounded --border-label=" ✳ $prog " --border-label-pos=3
+  --pointer='❯' --prompt='❯ '
+  --color="fg+:255,bg+:236,hl:$accent,hl+:$accent,pointer:$accent,prompt:$accent"
+  --color="border:240,label:$accent,header:245,info:245,spinner:$accent"
+  --color="preview-border:240,preview-label:$accent"
+)
+# The key hints live at the bottom on fzf >= 0.64, at the top on older versions.
+case $(fzf --version 2>/dev/null) in
+  0.6[4-9].* | 0.[7-9][0-9].* | [1-9]*) hint=(--footer " $m_keys_main") ;;
+  *) hint=(--header "$m_keys_main" --header-first) ;;
+esac
+
+export KSA_SOCKET="$socket" KSA_NEW="$m_new" KSA_EMPTY="$m_empty"
+# shellcheck disable=SC2016  # fzf expands these at preview time, not us
+preview='n={1}; if [ "$n" = __NEW__ ]; then printf "%s\n" "$KSA_NEW";
+else tmux -L "$KSA_SOCKET" capture-pane -pe -t "=$n" 2>/dev/null || printf "%s\n" "$KSA_EMPTY"; fi'
+
+# Level 2 (tab): everything you can do with one session, as visible rows.
+action_menu() {
+  export KSA_TARGET="$1"
+  # shellcheck disable=SC2016  # fzf expands these at preview time, not us
+  printf 'open\t%s\nrename\t%s\nstop\t%s\nback\t%s\n' "$m_open" "$m_rename" "$m_stop" "$m_back" |
+    fzf "${fzf_theme[@]}" --delimiter='\t' --with-nth=2 \
+      --border-label=" $1 " \
+      --header "$m_keys_action" --header-first \
+      --preview='tmux -L "$KSA_SOCKET" capture-pane -pe -t "=$KSA_TARGET" 2>/dev/null || printf "%s\n" "$KSA_EMPTY"' \
+      --preview-window='right,50%,border-rounded' --preview-label=" $m_preview " |
+    cut -f1
+  return 0
+}
+
+# Level 1: the session list. Enter opens the highlighted session directly.
+ensure_theme
+while true; do
+  out=$(sessions | fzf "${fzf_theme[@]}" "${hint[@]}" \
+    --delimiter='\t' --with-nth=2 \
+    --expect=tab,ctrl-n,ctrl-x,ctrl-r \
+    --preview="$preview" --preview-window='right,50%,border-rounded' \
+    --preview-label=" $m_preview ") || break
+
+  key=$(printf '%s\n' "$out" | sed -n 1p)
+  line=$(printf '%s\n' "$out" | sed -n 2p)
+  [ -z "$line" ] && continue
+  name=${line%%$'\t'*}
+
+  case $key in
+    ctrl-n) create; continue ;;
+    ctrl-x) [ "$name" = "__NEW__" ] || stop "$name"; continue ;;
+    ctrl-r) [ "$name" = "__NEW__" ] || rename "$name"; continue ;;
+    tab)
+      if [ "$name" = "__NEW__" ]; then create; continue; fi
+      case $(action_menu "$name") in
+        open) open "$name" ;;
+        rename) rename "$name" ;;
+        stop) stop "$name" ;;
+      esac
+      continue ;;
+  esac
+
+  if [ "$name" = "__NEW__" ]; then create; else open "$name"; fi
+done

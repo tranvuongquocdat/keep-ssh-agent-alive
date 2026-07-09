@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    name: shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck
+        run: shellcheck keep-ssh-agent-alive install.sh
+      - name: bash syntax
+        run: |
+          for f in keep-ssh-agent-alive install.sh; do bash -n "$f"; done
+
+  install:
+    name: install on ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Preinstall deps
+        run: |
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            brew install tmux fzf
+          else
+            sudo apt-get update && sudo apt-get install -y tmux fzf
+          fi
+      - name: Run installer (answers = English, name ksa-test, default command)
+        run: printf '1\nksa-test\n\n' | ./install.sh
+      - name: Verify install
+        run: |
+          test -x "$HOME/.local/bin/ksa-test"
+          grep -q "language='en'" "${XDG_CONFIG_HOME:-$HOME/.config}/keep-ssh-agent-alive/config"
+          grep -q "default_command='claude'" "${XDG_CONFIG_HOME:-$HOME/.config}/keep-ssh-agent-alive/config"
+          # Without a terminal it should refuse politely, not crash
+          ("$HOME/.local/bin/ksa-test" 2>&1 || true) | grep -q "interactive terminal"
