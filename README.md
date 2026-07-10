@@ -149,3 +149,13 @@ it, no knowledge of the code needed. Code contributions: see
 ## License
 
 Released under the [MIT License](LICENSE).
+
+---
+
+<div align="center">
+
+Made with ❤️ by **Tran Vuong Quoc Dat**
+
+[Report Bug](../../issues/new/choose) · [Request Feature](../../issues/new/choose)
+
+</div>

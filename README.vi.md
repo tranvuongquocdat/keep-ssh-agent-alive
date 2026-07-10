@@ -146,3 +146,13 @@ bước, không cần hiểu mã nguồn. Đóng góp mã: xem
 ## Giấy phép
 
 Phát hành theo [Giấy phép MIT](LICENSE).
+
+---
+
+<div align="center">
+
+Được làm với ❤️ bởi **Trần Vương Quốc Đạt**
+
+[Báo lỗi](../../issues/new/choose) · [Đề xuất tính năng](../../issues/new/choose)
+
+</div>
