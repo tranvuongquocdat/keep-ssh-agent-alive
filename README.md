@@ -133,9 +133,8 @@ cd keep-ssh-agent-alive
 The installer asks three questions, each with a sensible default:
 
 1. **Language** — English or Tiếng Việt, for every menu and message
-2. **Command name** — what you will type to open the menu. Keep the default
-   `run_claude` or pick your own; if the name already exists on your system,
-   it warns you and lets you choose again.
+2. **Command name** — what you will type to open the menu (default
+   `run_claude`). If the name already exists on your system, it warns you.
 3. **Default command** — what new sessions run (default `claude`; some
    people prefer e.g. `claude --dangerously-skip-permissions`)
 
