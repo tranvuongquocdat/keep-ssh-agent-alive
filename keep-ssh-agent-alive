@@ -166,8 +166,9 @@ create() {
   if tm has-session -t "=$name" 2>/dev/null; then
     notice "'$name' $m_exists"; return
   fi
-  read -r -p "$m_cmd_q [${default_command:-shell}]: " cmd </dev/tty
+  read -r -p "$m_cmd_q ($m_cmd_hint) [${default_command:-shell}]: " cmd </dev/tty
   cmd=${cmd:-$default_command}
+  [ "$cmd" = 'shell' ] && cmd='' # 'shell' = plain empty terminal
   # New sessions start in the directory the menu was opened from.
   if [ -n "$cmd" ]; then tm new-session -d -s "$name" -c "$PWD" "$cmd"
   else tm new-session -d -s "$name" -c "$PWD"; fi

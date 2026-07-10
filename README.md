@@ -54,8 +54,11 @@ Press Enter twice and you are in:
 
 ```text
 Session name [agent-2]:
-Command to run [claude]:
+Command to run (type 'shell' for a plain shell) [claude]:
 ```
+
+Want an empty terminal instead of your default command? Type `shell` at the
+second question.
 
 The new session starts **in the folder you opened the menu from**, so your
 agent works on the right project.
@@ -157,6 +160,18 @@ Every text in the interface lives in one small file per language
 ([`lang/en.sh`](lang/en.sh), [`lang/vi.sh`](lang/vi.sh)). To add French:
 copy `en.sh` to `fr.sh`, translate the values, done — it appears in
 Settings automatically. Pull requests for new languages are very welcome.
+
+## Uninstall
+
+From the cloned folder:
+
+```sh
+./uninstall.sh
+```
+
+It lists exactly what it found — the installed command, your settings, the
+language files, and any running sessions — asks once, then removes it all.
+Answer `n` and nothing is touched.
 
 ## Questions, ideas, bugs
 

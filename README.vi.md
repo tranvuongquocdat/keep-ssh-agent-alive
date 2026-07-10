@@ -53,8 +53,10 @@ là vào:
 
 ```text
 Tên phiên [agent-2]:
-Lệnh chạy [claude]:
+Lệnh chạy (gõ 'shell' nếu chỉ cần shell thường) [claude]:
 ```
+
+Muốn một terminal trống thay vì lệnh mặc định? Gõ `shell` ở câu hỏi thứ hai.
 
 Phiên mới khởi động **tại đúng thư mục bạn mở menu**, nên agent làm việc
 đúng dự án của bạn.
@@ -155,6 +157,18 @@ Toàn bộ chữ trong giao diện nằm trong một tập tin nhỏ cho mỗi n
 ([`lang/en.sh`](lang/en.sh), [`lang/vi.sh`](lang/vi.sh)). Muốn thêm tiếng
 Pháp: sao chép `en.sh` thành `fr.sh`, dịch các giá trị, xong — nó tự xuất
 hiện trong Cài đặt. Rất hoan nghênh pull request cho ngôn ngữ mới.
+
+## Gỡ cài đặt
+
+Từ thư mục đã clone:
+
+```sh
+./uninstall.sh
+```
+
+Nó liệt kê chính xác những gì tìm thấy — lệnh đã cài, thiết lập, tập tin
+ngôn ngữ, và các phiên đang chạy — hỏi một lần rồi mới xoá tất cả. Trả lời
+`n` thì không đụng gì cả.
 
 ## Câu hỏi, ý tưởng, lỗi
 
