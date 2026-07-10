@@ -76,14 +76,14 @@ fi
 
 # --- questions ------------------------------------------------------------------
 echo
-read -r -p "$t_name [run_claude]: " name
+read -r -p "$t_name [default: run_claude]: " name
 name=${name:-run_claude}
 case $name in
   *[!a-zA-Z0-9_-]*) echo "$t_name_rule"; exit 1 ;;
 esac
 command -v "$name" >/dev/null 2>&1 && echo "⚠ $t_conflict"
 
-read -r -p "$t_def [claude]: " def
+read -r -p "$t_def [default: claude]: " def
 def=${def:-claude}
 [ "$def" = 'shell' ] && def=''
 

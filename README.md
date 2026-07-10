@@ -31,6 +31,7 @@ Type your command (you pick its name during install — default `run_claude`):
 │   2 · Create a new session          │
 │   3 · Stop sessions                 │
 │   4 · Settings                      │
+│   5 · Quit                          │
 ╰─────────────────────────────────────╯
 ```
 

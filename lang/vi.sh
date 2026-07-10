@@ -12,6 +12,7 @@ m_menu_open='Mở phiên đang chạy'
 m_menu_new='Tạo phiên mới'
 m_menu_stop='Tắt phiên'
 m_menu_settings='Cài đặt'
+m_menu_quit='Thoát'
 
 m_keys_main='enter: chọn · esc: thoát'
 m_keys_back='enter: chọn · esc: quay lại'

@@ -255,8 +255,8 @@ settings_menu() {
 expire_old_sessions
 ensure_theme
 while true; do
-  choice=$(printf 'open\t1 · %s\nnew\t2 · %s\nstop\t3 · %s\nsettings\t4 · %s\n' \
-    "$m_menu_open" "$m_menu_new" "$m_menu_stop" "$m_menu_settings" |
+  choice=$(printf 'open\t1 · %s\nnew\t2 · %s\nstop\t3 · %s\nsettings\t4 · %s\nquit\t5 · %s\n' \
+    "$m_menu_open" "$m_menu_new" "$m_menu_stop" "$m_menu_settings" "$m_menu_quit" |
     fzf "${fzf_theme[@]}" --delimiter='\t' --with-nth=2 \
       --header "$m_keys_main" --header-first | cut -f1) || break
   case $choice in
@@ -264,5 +264,6 @@ while true; do
     new) create ;;
     stop) stop_menu ;;
     settings) settings_menu ;;
+    quit) break ;;
   esac
 done

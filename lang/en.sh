@@ -12,6 +12,7 @@ m_menu_open='Open a running session'
 m_menu_new='Create a new session'
 m_menu_stop='Stop sessions'
 m_menu_settings='Settings'
+m_menu_quit='Quit'
 
 m_keys_main='enter: choose · esc: quit'
 m_keys_back='enter: choose · esc: back'

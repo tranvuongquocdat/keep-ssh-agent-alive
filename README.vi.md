@@ -30,6 +30,7 @@ Gõ lệnh của bạn (tên lệnh do bạn chọn lúc cài — mặc định 
 │   2 · Tạo phiên mới                 │
 │   3 · Tắt phiên                     │
 │   4 · Cài đặt                       │
+│   5 · Thoát                         │
 ╰─────────────────────────────────────╯
 ```
 
