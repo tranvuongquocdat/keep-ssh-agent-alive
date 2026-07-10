@@ -119,6 +119,11 @@ exactly where you left it.
 
 ## Set up once
 
+Install it **on the machine that stays on** — your server. The laptop you
+carry around needs nothing but a normal SSH connection to it.
+
+The same three lines work everywhere:
+
 ```sh
 git clone https://github.com/tranvuongquocdat/keep-ssh-agent-alive.git
 cd keep-ssh-agent-alive
@@ -136,9 +141,14 @@ The installer asks three questions, each with a sensible default:
 It also offers to install the two small tools it needs (`tmux` and `fzf`) if
 they are missing. Everything can be changed later in **Settings**.
 
-**Windows:** there is no native tmux, so install
-[MSYS2](https://www.msys2.org/) first (much lighter than WSL — no virtual
-machine, ~300 MB), open its shell, and run the same three lines above.
+### Notes per operating system
+
+| Your server runs…                            | What to know                                                                                                                                                         |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Linux** (Ubuntu, Debian, Fedora, Arch, …)  | Works as is — the installer fetches `tmux` and `fzf` with your system's package manager (apt, dnf, pacman).                                                          |
+| **Raspberry Pi**                             | Same as Linux: Raspberry Pi OS is Debian, so the installer uses apt. A Pi is a great cheap always-on home server for exactly this.                                   |
+| **macOS**                                    | Works as is. If `tmux`/`fzf` are missing, the installer fetches them with [Homebrew](https://brew.sh) — install that first if you don't have it.                     |
+| **Windows**                                  | No native tmux. Install [MSYS2](https://www.msys2.org/) first (much lighter than WSL — no virtual machine, ~300 MB), open its shell, then run the three lines above. |
 
 ## Adding a language
 
