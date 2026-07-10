@@ -71,7 +71,9 @@ case $a in
   *) echo "$t_cancel"; exit 0 ;;
 esac
 
-command -v tmux >/dev/null 2>&1 && tmux -L "$socket" kill-server 2>/dev/null || true
+if command -v tmux >/dev/null 2>&1; then
+  tmux -L "$socket" kill-server 2>/dev/null || true
+fi
 for f in "${cmds[@]}"; do rm -f "$f"; done
 rm -rf "$cfg_dir" "$share_dir"
 
