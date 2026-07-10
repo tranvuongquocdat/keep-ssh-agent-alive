@@ -22,32 +22,13 @@ Enter để chọn, Esc để quay lại. **Không phải ghi nhớ gì cả.**
 
 Gõ lệnh của bạn (tên lệnh do bạn chọn lúc cài — mặc định là `run_claude`):
 
-```text
-╭─ ✳ run_claude ──────────────────────╮
-│  enter: chọn · esc: thoát           │
-│                                     │
-│ ❯ 1 · Mở phiên đang chạy            │
-│   2 · Tạo phiên mới                 │
-│   3 · Tắt phiên                     │
-│   4 · Cài đặt                       │
-│   5 · Thoát                         │
-╰─────────────────────────────────────╯
-```
+![Menu chính](assets/start_menu.png)
 
 **1 · Mở phiên đang chạy** — danh sách phiên của bạn, kèm hình ảnh trực tiếp
 mỗi phiên đang làm gì. Chọn một cái là vào lại ngay. Nếu chưa có gì chạy,
 menu sẽ báo rõ.
 
-```text
-╭─ Mở phiên đang chạy ────────────────╮╭─ xem trước ────────────────╮
-│  enter: chọn · esc: quay lại        ││ ✳ Đang sửa parser…         │
-│                                     ││                            │
-│ ❯ agent-1     ● claude · đang mở    ││ > chạy bộ test             │
-│   agent-2     ● claude              ││ ⎿  42 passed, 0 failed     │
-│   build       ○ chờ                 ││                            │
-│   ← Quay lại                        ││                            │
-╰─────────────────────────────────────╯╰────────────────────────────╯
-```
+![Mở phiên đang chạy](assets/open_running_session.png)
 
 **2 · Tạo phiên mới** — hai câu hỏi, đều có sẵn đáp án. Bấm Enter hai lần
 là vào:
@@ -65,27 +46,11 @@ Phiên mới khởi động **tại đúng thư mục bạn mở menu**, nên ag
 **3 · Tắt phiên** — đánh dấu một hoặc nhiều phiên bằng phím Space, hoặc chọn
 "Tắt tất cả". Luôn hỏi xác nhận trước khi tắt:
 
-```text
-╭─ Tắt phiên ─────────────────────────╮
-│  space: chọn · enter: xác nhận      │
-│                                     │
-│   Tắt tất cả các phiên              │
-│ ✓ agent-1     ● claude              │
-│ ❯ build       ○ chờ                 │
-│   ← Quay lại                        │
-╰─────────────────────────────────────╯
-```
+![Tắt phiên](assets/stop_session.png)
 
 **4 · Cài đặt** — đổi mọi lựa chọn lúc cài, không cần cài lại:
 
-```text
-╭─ Cài đặt ────────────────────────────────╮
-│ ❯ Ngôn ngữ — Tiếng Việt                  │
-│   Lệnh mặc định — claude                 │
-│   Tuổi thọ tối đa — không giới hạn       │
-│   Quay lại                               │
-╰──────────────────────────────────────────╯
-```
+![Cài đặt](assets/settings.png)
 
 ## Luồng hoạt động
 

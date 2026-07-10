@@ -23,32 +23,13 @@ back. **Nothing to memorize.**
 
 Type your command (you pick its name during install — default `run_claude`):
 
-```text
-╭─ ✳ run_claude ──────────────────────╮
-│  enter: choose · esc: quit          │
-│                                     │
-│ ❯ 1 · Open a running session        │
-│   2 · Create a new session          │
-│   3 · Stop sessions                 │
-│   4 · Settings                      │
-│   5 · Quit                          │
-╰─────────────────────────────────────╯
-```
+![Main menu](assets/start_menu.png)
 
 **1 · Open a running session** — your sessions, with a live view of what
 each one is doing right now. Pick one and you are back inside. If nothing is
 running, it simply tells you so.
 
-```text
-╭─ Open a running session ────────────╮╭─ preview ──────────────────╮
-│  enter: choose · esc: back          ││ ✳ Working on the parser…   │
-│                                     ││                            │
-│ ❯ agent-1     ● claude · attached   ││ > run the test suite       │
-│   agent-2     ● claude              ││ ⎿  42 passed, 0 failed     │
-│   build       ○ idle                ││                            │
-│   ← Back                            ││                            │
-╰─────────────────────────────────────╯╰────────────────────────────╯
-```
+![Open a running session](assets/open_running_session.png)
 
 **2 · Create a new session** — two questions, both already answered for you.
 Press Enter twice and you are in:
@@ -67,28 +48,12 @@ agent works on the right project.
 **3 · Stop sessions** — tick one or more with Space, or choose "Stop all".
 It always asks before stopping anything:
 
-```text
-╭─ Stop sessions ─────────────────────╮
-│  space: select · enter: confirm     │
-│                                     │
-│   Stop all sessions                 │
-│ ✓ agent-1     ● claude              │
-│ ❯ build       ○ idle                │
-│   ← Back                            │
-╰─────────────────────────────────────╯
-```
+![Stop sessions](assets/stop_session.png)
 
 **4 · Settings** — change anything you chose at install time, no reinstall
 needed:
 
-```text
-╭─ Settings ──────────────────────────╮
-│ ❯ Language — English                │
-│   Default command — claude          │
-│   Maximum session age — unlimited   │
-│   Back                              │
-╰─────────────────────────────────────╯
-```
+![Settings](assets/settings.png)
 
 ## How it flows
 
