@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #
-# A friendly menu on top of tmux: pick a session, watch it live, jump in.
-# Sessions survive disconnects, so closing your laptop won't kill your work.
+# A friendly menu on top of tmux: open, create, and stop long-running
+# sessions with arrow keys and Enter. Sessions survive disconnects, so
+# closing your laptop won't kill your work.
 
 socket='keep-ssh-agent-alive'
 config="${XDG_CONFIG_HOME:-$HOME/.config}/keep-ssh-agent-alive/config"
@@ -9,6 +10,7 @@ default_command='claude'
 session_prefix='agent'
 language='en'
 mouse='off'
+max_hours='0'
 # shellcheck source=/dev/null
 [ -f "$config" ] && . "$config"
 
@@ -26,32 +28,29 @@ tm() { command tmux -L "$socket" "$@"; }
 prog=$(basename "$0")
 accent=173 # 256-color approximation of the coral in the design
 
-# --- interface language (picked during install; language= in the config) ----
-if [ "$language" = 'vi' ]; then
-  m_new='Tạo phiên mới'; m_open='Mở phiên'; m_rename='Đổi tên'; m_stop='Dừng phiên'
-  m_back='Quay lại'; m_attached='đang mở'; m_idle='chờ'; m_preview='xem trước'
-  m_keys_main='enter mở · tab hành động · ctrl-n tạo mới · ctrl-x dừng · esc thoát'
-  m_keys_action='enter chọn · esc quay lại'
-  m_name_q='Tên phiên'; m_cmd_q='Lệnh chạy'
-  m_bad_name='Tên không hợp lệ (không dùng dấu chấm hoặc hai chấm, không để trống).'
-  m_exists='đã tồn tại.'
-  m_stop_confirm='Tiến trình bên trong sẽ bị tắt. [y/N]:'
-  m_rename_q='Tên mới cho'
-  m_return='quay về menu · tiến trình vẫn chạy'
-  m_empty='(chưa có gì chạy)'
-else
-  m_new='New session'; m_open='Open session'; m_rename='Rename'; m_stop='Stop session'
-  m_back='Back'; m_attached='attached'; m_idle='idle'; m_preview='preview'
-  m_keys_main='enter open · tab actions · ctrl-n new · ctrl-x stop · esc quit'
-  m_keys_action='enter select · esc back'
-  m_name_q='Session name'; m_cmd_q='Command'
-  m_bad_name='Invalid name (no dots or colons, not empty).'
-  m_exists='already exists.'
-  m_stop_confirm='The program running inside will be terminated. [y/N]:'
-  m_rename_q='New name for'
-  m_return='back to menu · keeps running'
-  m_empty='(nothing running yet)'
+# --- language: one file per language in lang/, picked by language= ----------
+script_dir=$(cd "$(dirname "$0")" && pwd)
+data_dir="${XDG_DATA_HOME:-$HOME/.local/share}/keep-ssh-agent-alive"
+lang_dir=''
+for d in "$script_dir/lang" "$data_dir/lang"; do
+  [ -f "$d/en.sh" ] && lang_dir=$d && break
+done
+[ -n "$lang_dir" ] || { echo "Language files not found. Re-run install.sh." >&2; exit 1; }
+# English first as the fallback, then the chosen language on top of it.
+# shellcheck source=lang/en.sh
+. "$lang_dir/en.sh"
+if [ "$language" != 'en' ] && [ -f "$lang_dir/$language.sh" ]; then
+  # shellcheck source=/dev/null
+  . "$lang_dir/$language.sh"
 fi
+
+save_config() {
+  local esc
+  mkdir -p "$(dirname "$config")"
+  esc=$(printf '%s' "$default_command" | sed "s/'/'\\\\''/g")
+  printf "language='%s'\ndefault_command='%s'\nsession_prefix='%s'\nmouse='%s'\nmax_hours='%s'\n" \
+    "$language" "$esc" "$session_prefix" "$mouse" "$max_hours" >"$config"
+}
 
 # --- in-session status bar: the way out is always written on screen ---------
 themed=''
@@ -93,40 +92,20 @@ next_name() {
   printf '%s-%s' "$session_prefix" "$i"
 }
 
-create() {
-  local name cmd def
-  def=$(next_name)
-  read -r -p "$m_name_q [$def]: " name </dev/tty
-  name=${name:-$def}
-  case $name in *[.:]* | '') echo "$m_bad_name"; sleep 1; return ;; esac
-  if tm has-session -t "=$name" 2>/dev/null; then
-    echo "'$name' $m_exists"; sleep 1; return
-  fi
-  read -r -p "$m_cmd_q [${default_command:-shell}]: " cmd </dev/tty
-  cmd=${cmd:-$default_command}
-  if [ -n "$cmd" ]; then tm new-session -d -s "$name" "$cmd"
-  else tm new-session -d -s "$name"; fi
-  themed='' # a fresh server may have just started; re-apply the theme
-  open "$name"
-}
-
-stop() {
-  local a
-  read -r -p "$m_stop '$1'? $m_stop_confirm " a </dev/tty
-  case $a in [yY]*) tm kill-session -t "=$1" ;; esac
-}
-
-rename() {
-  local new
-  read -r -p "$m_rename_q '$1': " new </dev/tty
-  [ -z "$new" ] && return
-  case $new in *[.:]*) echo "$m_bad_name"; sleep 1; return ;; esac
-  tm rename-session -t "=$1" "$new"
+# Sessions past their maximum age are stopped whenever the menu opens.
+expire_old_sessions() {
+  local now name created
+  case $max_hours in '' | 0 | *[!0-9]*) return ;; esac
+  now=$(date +%s)
+  tm list-sessions -F "#{session_name}	#{session_created}" 2>/dev/null |
+    while IFS=$'\t' read -r name created; do
+      [ $((now - created)) -gt $((max_hours * 3600)) ] && tm kill-session -t "=$name"
+    done
+  return 0
 }
 
 # One row per session: name, then a status dot and what it is running.
-sessions() {
-  printf '__NEW__\t\033[38;5;%sm+ %s\033[0m\n' "$accent" "$m_new"
+session_rows() {
   tm list-sessions -F "#{session_name}	#{session_attached}" 2>/dev/null |
     while IFS=$'\t' read -r name att; do
       IFS=$'\t' read -r start current < <(
@@ -146,67 +125,144 @@ sessions() {
   return 0
 }
 
-# --- fzf look & feel ---------------------------------------------------------
+# --- fzf look & feel ----------------------------------------------------------
 fzf_theme=(
   --ansi --no-sort --reverse --cycle --height=100%
   --border=rounded --border-label=" ✳ $prog " --border-label-pos=3
   --pointer='❯' --prompt='❯ '
   --color="fg+:255,bg+:236,hl:$accent,hl+:$accent,pointer:$accent,prompt:$accent"
-  --color="border:240,label:$accent,header:245,info:245,spinner:$accent"
+  --color="border:240,label:$accent,header:245,info:245,spinner:$accent,marker:$accent"
   --color="preview-border:240,preview-label:$accent"
 )
-# The key hints live at the bottom on fzf >= 0.64, at the top on older versions.
-case $(fzf --version 2>/dev/null) in
-  0.6[4-9].* | 0.[7-9][0-9].* | [1-9]*) hint=(--footer " $m_keys_main") ;;
-  *) hint=(--header "$m_keys_main" --header-first) ;;
-esac
 
-export KSA_SOCKET="$socket" KSA_NEW="$m_new" KSA_EMPTY="$m_empty"
+export KSA_SOCKET="$socket" KSA_EMPTY="$m_empty" KSA_ALL="$m_stop_all"
 # shellcheck disable=SC2016  # fzf expands these at preview time, not us
-preview='n={1}; if [ "$n" = __NEW__ ]; then printf "%s\n" "$KSA_NEW";
-else tmux -L "$KSA_SOCKET" capture-pane -pe -t "=$n" 2>/dev/null || printf "%s\n" "$KSA_EMPTY"; fi'
+preview='n={1}; case "$n" in __ALL__) printf "%s\n" "$KSA_ALL" ;;
+*) tmux -L "$KSA_SOCKET" capture-pane -pe -t "=$n" 2>/dev/null || printf "%s\n" "$KSA_EMPTY" ;; esac'
 
-# Level 2 (tab): everything you can do with one session, as visible rows.
-action_menu() {
-  export KSA_TARGET="$1"
-  # shellcheck disable=SC2016  # fzf expands these at preview time, not us
-  printf 'open\t%s\nrename\t%s\nstop\t%s\nback\t%s\n' "$m_open" "$m_rename" "$m_stop" "$m_back" |
-    fzf "${fzf_theme[@]}" --delimiter='\t' --with-nth=2 \
-      --border-label=" $1 " \
-      --header "$m_keys_action" --header-first \
-      --preview='tmux -L "$KSA_SOCKET" capture-pane -pe -t "=$KSA_TARGET" 2>/dev/null || printf "%s\n" "$KSA_EMPTY"' \
-      --preview-window='right,50%,border-rounded' --preview-label=" $m_preview " |
-    cut -f1
-  return 0
+notice() { echo "$1"; sleep 1.5; }
+
+# --- 1 · open a running session ------------------------------------------------
+open_menu() {
+  local rows sel
+  rows=$(session_rows)
+  [ -z "$rows" ] && { notice "$m_no_sessions"; return; }
+  sel=$(printf '%s\n' "$rows" | fzf "${fzf_theme[@]}" \
+    --delimiter='\t' --with-nth=2 \
+    --border-label=" $m_menu_open " \
+    --header "$m_keys_back" --header-first \
+    --preview="$preview" --preview-window='right,50%,border-rounded' \
+    --preview-label=" $m_preview ") || return
+  [ -n "$sel" ] && open "${sel%%$'\t'*}"
 }
 
-# Level 1: the session list. Enter opens the highlighted session directly.
+# --- 2 · create a new session ---------------------------------------------------
+create() {
+  local name cmd def
+  def=$(next_name)
+  read -r -p "$m_name_q [$def]: " name </dev/tty
+  name=${name:-$def}
+  case $name in *[.:]* | '') notice "$m_bad_name"; return ;; esac
+  if tm has-session -t "=$name" 2>/dev/null; then
+    notice "'$name' $m_exists"; return
+  fi
+  read -r -p "$m_cmd_q [${default_command:-shell}]: " cmd </dev/tty
+  cmd=${cmd:-$default_command}
+  # New sessions start in the directory the menu was opened from.
+  if [ -n "$cmd" ]; then tm new-session -d -s "$name" -c "$PWD" "$cmd"
+  else tm new-session -d -s "$name" -c "$PWD"; fi
+  themed='' # a fresh server may have just started; re-apply the theme
+  open "$name"
+}
+
+# --- 3 · stop sessions (multi-select, or all) -----------------------------------
+stop_menu() {
+  local rows sel names n a
+  rows=$(session_rows)
+  [ -z "$rows" ] && { notice "$m_no_sessions"; return; }
+  sel=$(printf '__ALL__\t\033[38;5;%sm%s\033[0m\n%s\n' "$accent" "$m_stop_all" "$rows" |
+    fzf "${fzf_theme[@]}" --delimiter='\t' --with-nth=2 \
+      --multi --bind 'space:toggle' --marker='✓' \
+      --border-label=" $m_menu_stop " \
+      --header "$m_keys_multi" --header-first \
+      --preview="$preview" --preview-window='right,50%,border-rounded' \
+      --preview-label=" $m_preview ") || return
+  if printf '%s\n' "$sel" | grep -q '^__ALL__'; then
+    names=$(tm list-sessions -F '#{session_name}' 2>/dev/null)
+  else
+    names=$(printf '%s\n' "$sel" | cut -f1)
+  fi
+  [ -z "$names" ] && return
+  n=$(printf '%s\n' "$names" | grep -c .)
+  read -r -p "$m_confirm_1 $n $m_confirm_2 " a </dev/tty
+  case $a in
+    [yY]*) printf '%s\n' "$names" | while read -r s; do tm kill-session -t "=$s"; done ;;
+  esac
+}
+
+# --- 4 · settings ----------------------------------------------------------------
+choose_language() {
+  local rows f code name sel
+  rows=$(for f in "$lang_dir"/*.sh; do
+    code=$(basename "$f" .sh)
+    name=$(sed -n "s/^lang_name='\(.*\)'/\1/p" "$f")
+    printf '%s\t%s\n' "$code" "${name:-$code}"
+  done)
+  sel=$(printf '%s\n' "$rows" | fzf "${fzf_theme[@]}" \
+    --delimiter='\t' --with-nth=2 \
+    --border-label=" $m_set_language " \
+    --header "$m_keys_back" --header-first | cut -f1) || return
+  [ -n "$sel" ] || return
+  language=$sel
+  save_config
+  exec "$0" # restart so every string reloads in the new language
+}
+
+settings_menu() {
+  local sel new_cmd h hours_disp
+  while true; do
+    case $max_hours in '' | 0 | *[!0-9]*) hours_disp=$m_unlimited ;; *) hours_disp="$max_hours $m_hours_unit" ;; esac
+    sel=$(printf 'language\t%s — %s\ncommand\t%s — %s\nhours\t%s — %s\nback\t%s\n' \
+      "$m_set_language" "$lang_name" \
+      "$m_set_command" "${default_command:-shell}" \
+      "$m_set_hours" "$hours_disp" \
+      "$m_back" |
+      fzf "${fzf_theme[@]}" --delimiter='\t' --with-nth=2 \
+        --border-label=" $m_menu_settings " \
+        --header "$m_keys_back" --header-first | cut -f1) || return
+    case $sel in
+      language) choose_language ;;
+      command)
+        read -r -p "$m_set_command ($m_cmd_hint) [${default_command:-shell}]: " new_cmd </dev/tty
+        [ -z "$new_cmd" ] && continue
+        [ "$new_cmd" = 'shell' ] && new_cmd=''
+        default_command=$new_cmd
+        save_config
+        notice "$m_saved" ;;
+      hours)
+        read -r -p "$m_hours_q [${max_hours:-0}]: " h </dev/tty
+        case $h in
+          '') ;;
+          *[!0-9]*) notice "$m_bad_name" ;;
+          *) max_hours=$h; save_config; notice "$m_saved" ;;
+        esac ;;
+      back | '') return ;;
+    esac
+  done
+}
+
+# --- main menu ---------------------------------------------------------------------
+expire_old_sessions
 ensure_theme
 while true; do
-  out=$(sessions | fzf "${fzf_theme[@]}" "${hint[@]}" \
-    --delimiter='\t' --with-nth=2 \
-    --expect=tab,ctrl-n,ctrl-x,ctrl-r \
-    --preview="$preview" --preview-window='right,50%,border-rounded' \
-    --preview-label=" $m_preview ") || break
-
-  key=$(printf '%s\n' "$out" | sed -n 1p)
-  line=$(printf '%s\n' "$out" | sed -n 2p)
-  [ -z "$line" ] && continue
-  name=${line%%$'\t'*}
-
-  case $key in
-    ctrl-n) create; continue ;;
-    ctrl-x) [ "$name" = "__NEW__" ] || stop "$name"; continue ;;
-    ctrl-r) [ "$name" = "__NEW__" ] || rename "$name"; continue ;;
-    tab)
-      if [ "$name" = "__NEW__" ]; then create; continue; fi
-      case $(action_menu "$name") in
-        open) open "$name" ;;
-        rename) rename "$name" ;;
-        stop) stop "$name" ;;
-      esac
-      continue ;;
+  choice=$(printf 'open\t1 · %s\nnew\t2 · %s\nstop\t3 · %s\nsettings\t4 · %s\n' \
+    "$m_menu_open" "$m_menu_new" "$m_menu_stop" "$m_menu_settings" |
+    fzf "${fzf_theme[@]}" --delimiter='\t' --with-nth=2 \
+      --header "$m_keys_main" --header-first | cut -f1) || break
+  case $choice in
+    open) open_menu ;;
+    new) create ;;
+    stop) stop_menu ;;
+    settings) settings_menu ;;
   esac
-
-  if [ "$name" = "__NEW__" ]; then create; else open "$name"; fi
 done

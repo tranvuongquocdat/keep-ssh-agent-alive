@@ -15,48 +15,105 @@ Bạn khởi động Claude Code — hoặc bất kỳ tác vụ chạy lâu nà
 chủ qua SSH. Rồi mạng rớt, hoặc bạn gập máy, và mọi thứ chết theo kết nối.
 
 Công cụ này giải quyết đúng chuyện đó. Các phiên làm việc nằm trên máy chủ
-và sống sót qua mọi lần mất kết nối, còn mọi thao tác đều qua menu — phím
-mũi tên và Enter. **Không phải ghi nhớ bất cứ điều gì.**
+và sống sót qua mọi lần mất kết nối. Tất cả đều là menu: phím mũi tên,
+Enter để chọn, Esc để quay lại. **Không phải ghi nhớ gì cả.**
 
 ## Những gì bạn thấy
 
 Gõ lệnh của bạn (tên lệnh do bạn chọn lúc cài — mặc định là `run_claude`):
 
 ```text
-╭─ ✳ run_claude ────────────────────╮╭─ xem trước ────────────────╮
-│                                   ││ ✳ Đang sửa parser…         │
-│ ❯ agent-1    ● claude · đang mở   ││                            │
-│   agent-2    ● claude             ││ > chạy bộ test             │
-│   build      ○ chờ                ││ ⎿  42 passed, 0 failed     │
-│                                   ││                            │
-│   + Tạo phiên mới                 ││                            │
-│                                   ││                            │
-│ ❯ gõ để lọc                       ││                            │
-╰───────────────────────────────────╯╰────────────────────────────╯
-  enter mở · tab hành động · ctrl-n tạo mới · ctrl-x dừng · esc thoát
+╭─ ✳ run_claude ──────────────────────╮
+│  enter: chọn · esc: thoát           │
+│                                     │
+│ ❯ 1 · Mở phiên đang chạy            │
+│   2 · Tạo phiên mới                 │
+│   3 · Tắt phiên                     │
+│   4 · Cài đặt                       │
+╰─────────────────────────────────────╯
 ```
 
-- Chấm xanh nghĩa là phiên đó đang có chương trình chạy.
-- Khung bên phải là **ảnh chụp trực tiếp** của phiên đang được chọn, nên bạn
-  phân biệt được các agent trước khi vào.
-- Mọi phím bấm được đều ghi sẵn ở đáy màn hình.
+**1 · Mở phiên đang chạy** — danh sách phiên của bạn, kèm hình ảnh trực tiếp
+mỗi phiên đang làm gì. Chọn một cái là vào lại ngay. Nếu chưa có gì chạy,
+menu sẽ báo rõ.
+
+```text
+╭─ Mở phiên đang chạy ────────────────╮╭─ xem trước ────────────────╮
+│  enter: chọn · esc: quay lại        ││ ✳ Đang sửa parser…         │
+│                                     ││                            │
+│ ❯ agent-1     ● claude · đang mở    ││ > chạy bộ test             │
+│   agent-2     ● claude              ││ ⎿  42 passed, 0 failed     │
+│   build       ○ chờ                 ││                            │
+╰─────────────────────────────────────╯╰────────────────────────────╯
+```
+
+**2 · Tạo phiên mới** — hai câu hỏi, đều có sẵn đáp án. Bấm Enter hai lần
+là vào:
+
+```text
+Tên phiên [agent-2]:
+Lệnh chạy [claude]:
+```
+
+Phiên mới khởi động **tại đúng thư mục bạn mở menu**, nên agent làm việc
+đúng dự án của bạn.
+
+**3 · Tắt phiên** — đánh dấu một hoặc nhiều phiên bằng phím Space, hoặc chọn
+"Tắt tất cả". Luôn hỏi xác nhận trước khi tắt:
+
+```text
+╭─ Tắt phiên ─────────────────────────╮
+│  space: chọn · enter: xác nhận      │
+│                                     │
+│   Tắt tất cả các phiên              │
+│ ✓ agent-1     ● claude              │
+│ ❯ build       ○ chờ                 │
+╰─────────────────────────────────────╯
+```
+
+**4 · Cài đặt** — đổi mọi lựa chọn lúc cài, không cần cài lại:
+
+```text
+╭─ Cài đặt ────────────────────────────────╮
+│ ❯ Ngôn ngữ — Tiếng Việt                  │
+│   Lệnh mặc định — claude                 │
+│   Tuổi thọ tối đa — không giới hạn       │
+│   Quay lại                               │
+╰──────────────────────────────────────────╯
+```
 
 ## Luồng hoạt động
 
 ```mermaid
 flowchart TD
-    A["Cài một lần — ./install.sh"] --> B["Gõ run_claude"]
-    B --> M["Menu chính — các phiên của bạn, kèm xem trước trực tiếp"]
-    M -- "Enter" --> S["Bên trong phiên"]
-    M -- "+ Tạo phiên mới" --> N["Tên? Lệnh? — đều có sẵn mặc định"]
+    I["Cài một lần — ./install.sh"] --> T["Gõ run_claude tại thư mục dự án"]
+    T --> M["Menu chính"]
+    M -- "1" --> O["Chọn phiên — có xem trước trực tiếp"]
+    O --> S["Bên trong phiên"]
+    M -- "2" --> N["Tên? Lệnh? — đều có sẵn mặc định"]
     N --> S
-    M -- "Tab" --> ACT["Đổi tên hoặc Dừng"]
-    ACT --> M
-    M -- "Esc" --> Q["Về shell — các phiên vẫn chạy"]
+    M -- "3" --> X["Đánh dấu phiên, hoặc tắt tất cả — hỏi trước khi tắt"]
+    X --> M
+    M -- "4" --> G["Ngôn ngữ · lệnh mặc định · tuổi thọ tối đa"]
+    G --> M
     S -- "F12" --> M
     S -- "Rớt mạng hoặc gập máy" --> K["Vẫn chạy trên máy chủ"]
     K -- "gõ lại run_claude" --> M
 ```
+
+## Khi đang ở trong một phiên
+
+Chương trình của bạn chiếm toàn màn hình, chỉ trừ một thanh nhỏ dưới đáy
+luôn ghi sẵn lối ra:
+
+```text
+ ✳ agent-1 · claude                  F12 quay về menu · tiến trình vẫn chạy
+```
+
+Bấm **F12** — một phím duy nhất, không tổ hợp — là quay về menu, chương
+trình bên trong vẫn chạy tiếp. Gập máy, mất Wi-Fi, tắt tab SSH: công việc
+của bạn không hề hấn gì. Kết nối lại, gõ `run_claude`, mọi thứ vẫn nguyên
+chỗ cũ.
 
 ## Cài đặt một lần
 
@@ -68,61 +125,30 @@ cd keep-ssh-agent-alive
 
 Trình cài đặt hỏi ba câu, câu nào cũng có sẵn đáp án mặc định:
 
-1. **Ngôn ngữ** — English hoặc Tiếng Việt (áp dụng cho toàn bộ menu và thông báo)
-2. **Tên lệnh** — thứ bạn sẽ gõ để mở menu. Mặc định là `run_claude`; nếu tên
-   bạn chọn đã tồn tại trên hệ thống, trình cài đặt sẽ cảnh báo để tránh
-   xung đột.
-3. **Lệnh mặc định** — chương trình mà phiên mới sẽ chạy. Mặc định là `claude`.
+1. **Ngôn ngữ** — English hoặc Tiếng Việt, cho toàn bộ menu và thông báo
+2. **Tên lệnh** — thứ bạn sẽ gõ để mở menu (mặc định `run_claude`). Nếu tên
+   đã tồn tại trên hệ thống, sẽ có cảnh báo.
+3. **Lệnh mặc định** — chương trình phiên mới sẽ chạy (mặc định `claude`;
+   có người thích đặt là `claude --dangerously-skip-permissions` chẳng hạn)
 
-Nếu máy còn thiếu hai thứ công cụ cần (`tmux` và `fzf`), trình cài đặt sẽ đề
-nghị cài giúp. Chạy lại `./install.sh` bất cứ lúc nào để đổi các lựa chọn.
+Nếu máy còn thiếu hai công cụ nhỏ cần thiết (`tmux` và `fzf`), trình cài đặt
+sẽ đề nghị cài giúp. Về sau mọi thứ đổi được trong mục **Cài đặt**.
 
 **Windows:** không có tmux bản gốc, nên hãy cài
 [MSYS2](https://www.msys2.org/) trước (nhẹ hơn WSL nhiều — không máy ảo,
 khoảng 300 MB), mở shell của nó và chạy đúng ba dòng lệnh ở trên.
 
-## Khi đang ở trong một phiên
+## Thêm một ngôn ngữ
 
-Chương trình của bạn chiếm toàn màn hình, chỉ trừ một thanh nhỏ dưới đáy luôn
-ghi sẵn lối ra:
-
-```text
- ✳ agent-1 · claude                  F12 quay về menu · tiến trình vẫn chạy
-```
-
-Bấm **F12** — một phím duy nhất, không tổ hợp — là bạn quay về menu, chương
-trình bên trong vẫn tiếp tục chạy. (Ai đã quen tmux thì `Ctrl-b d` vẫn dùng
-được như thường.)
-
-## Các việc thường ngày
-
-| Bạn muốn…                          | Làm thế này                                     |
-| ---------------------------------- | ----------------------------------------------- |
-| Khởi động một agent mới            | Chọn **+ Tạo phiên mới**, bấm Enter hai lần     |
-| Vào một phiên                      | Di chuyển đến nó, bấm **Enter**                 |
-| Xem một agent đang làm gì          | Chỉ cần di chuyển đến nó — khung xem trước là trực tiếp |
-| Rời đi mà không dừng gì cả         | **F12** khi trong phiên, **Esc** khi ở menu     |
-| Đổi tên hoặc dừng một phiên        | Di chuyển đến nó, bấm **Tab**, chọn hành động   |
-| Tìm phiên theo tên                 | Cứ gõ tên là danh sách tự lọc                   |
-
-**Gập máy? Mất Wi-Fi?** Công việc của bạn không hề hấn gì. Kết nối lại, gõ
-`run_claude`, mọi thứ vẫn nguyên chỗ cũ.
-
-## Thiết lập
-
-Được chọn lúc cài, lưu tại `~/.config/keep-ssh-agent-alive/config`:
-
-| Thiết lập         | Mặc định | Ý nghĩa                                          |
-| ----------------- | -------- | ------------------------------------------------ |
-| `language`        | `en`     | Ngôn ngữ menu: `en` hoặc `vi`                    |
-| `default_command` | `claude` | Lệnh phiên mới sẽ chạy; để trống là shell thường |
-| `session_prefix`  | `agent`  | Tên tự sinh: `agent-1`, `agent-2`, …             |
-| `mouse`           | `off`    | `on` cho phép click thanh đáy để rời phiên (khi đó bôi đen chọn chữ cần giữ Shift) |
+Toàn bộ chữ trong giao diện nằm trong một tập tin nhỏ cho mỗi ngôn ngữ
+([`lang/en.sh`](lang/en.sh), [`lang/vi.sh`](lang/vi.sh)). Muốn thêm tiếng
+Pháp: sao chép `en.sh` thành `fr.sh`, dịch các giá trị, xong — nó tự xuất
+hiện trong Cài đặt. Rất hoan nghênh pull request cho ngôn ngữ mới.
 
 ## Câu hỏi, ý tưởng, lỗi
 
-[Mở một issue](../../issues/new/choose) — biểu mẫu ngắn sẽ dẫn bạn từng bước,
-không cần hiểu mã nguồn. Đóng góp mã cũng rất hoan nghênh: xem
+[Mở một issue](../../issues/new/choose) — biểu mẫu ngắn sẽ dẫn bạn từng
+bước, không cần hiểu mã nguồn. Đóng góp mã: xem
 [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Giấy phép

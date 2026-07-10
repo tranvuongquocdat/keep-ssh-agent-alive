@@ -1,0 +1,3 @@
+# Let shellcheck follow the "source=lang/en.sh" directive in the main script,
+# so strings defined in language files are recognized as assigned.
+external-sources=true

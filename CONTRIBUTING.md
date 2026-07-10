@@ -11,19 +11,30 @@ need to know the codebase. Screenshots of the menu are always welcome.
 ## Making a change
 
 1. Fork and clone the repo.
-2. Edit `keep-ssh-agent-alive` (the menu) or `install.sh` (the setup).
-3. Try it in a real terminal: run `./keep-ssh-agent-alive` directly from the repo -
-   no need to reinstall while developing. Create a session, open it, leave
-   with `F12`, rename it, stop it. Test both languages (`language='vi'` /
-   `language='en'` in `~/.config/keep-ssh-agent-alive/config`).
-4. Lint it: `shellcheck keep-ssh-agent-alive install.sh` (CI runs this too).
+2. Edit `keep-ssh-agent-alive` (the menu), `install.sh` (the setup), or a
+   file in `lang/` (interface text).
+3. Try it in a real terminal: run `./keep-ssh-agent-alive` directly from the
+   repo - no need to reinstall while developing. Walk through all four menu
+   items: open, create, stop (multi-select and "stop all"), settings. Test
+   both languages via Settings.
+4. Lint it: `shellcheck keep-ssh-agent-alive install.sh lang/*.sh` (CI runs
+   this too).
 5. Open a pull request. Keep it small; one change per PR.
+
+## Adding a language
+
+Copy `lang/en.sh` to `lang/<code>.sh` (e.g. `fr.sh`), translate the values,
+keep the variable names. The language appears in Settings automatically.
+That's the whole job - this is a very welcome first contribution.
 
 ## Ground rules for the code
 
 - Stay dependency-free: bash + tmux + fzf only.
-- Everything must be reachable through the menu. Hotkeys are shortcuts for
-  menu rows, never the only way to do something - the whole point is that
-  users shouldn't have to memorize commands.
+- Menus only, no hotkeys to memorize. Every action is a visible row you
+  reach with arrow keys and Enter; Esc always goes back. The few keys that
+  exist (Space to tick, F12 to leave a session) are always written on the
+  screen where they apply.
 - Keep it friendly to people who barely use a terminal: plain-language
   prompts, confirmation before destructive actions, sensible defaults.
+- All user-facing text goes through `lang/` files - never hardcode a string
+  in the menu script.

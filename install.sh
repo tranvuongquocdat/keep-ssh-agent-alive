@@ -8,16 +8,21 @@ set -e
 here=$(cd "$(dirname "$0")" && pwd)
 bin_dir="$HOME/.local/bin"
 cfg_dir="${XDG_CONFIG_HOME:-$HOME/.config}/keep-ssh-agent-alive"
+share_dir="${XDG_DATA_HOME:-$HOME/.local/share}/keep-ssh-agent-alive"
 
-# --- language (asked first so every later prompt uses it) --------------------
+# --- language (asked first; the list comes straight from lang/) ---------------
 echo "Language / Ngôn ngữ"
-echo "  1) English"
-echo "  2) Tiếng Việt"
-read -r -p "[1]: " lang_choice
-case ${lang_choice:-1} in
-  2*) language='vi' ;;
-  *) language='en' ;;
-esac
+codes=()
+i=0
+for f in "$here"/lang/*.sh; do
+  i=$((i + 1))
+  codes+=("$(basename "$f" .sh)")
+  echo "  $i) $(sed -n "s/^lang_name='\(.*\)'/\1/p" "$f")"
+done
+read -r -p "[1]: " c
+case $c in *[!0-9]* | '') c=1 ;; esac
+{ [ "$c" -ge 1 ] && [ "$c" -le "$i" ]; } || c=1
+language=${codes[$((c - 1))]}
 
 if [ "$language" = 'vi' ]; then
   t_need='Cần cài thêm:'
@@ -57,7 +62,7 @@ install_pkg() {
   fi
 }
 
-# --- deps -------------------------------------------------------------------
+# --- deps ---------------------------------------------------------------------
 missing=()
 for d in tmux fzf; do command -v "$d" >/dev/null || missing+=("$d"); done
 if [ "${#missing[@]}" -gt 0 ]; then
@@ -69,7 +74,7 @@ if [ "${#missing[@]}" -gt 0 ]; then
   install_pkg "${missing[@]}" || { echo "$t_no_pm"; exit 1; }
 fi
 
-# --- questions ----------------------------------------------------------------
+# --- questions ------------------------------------------------------------------
 echo
 read -r -p "$t_name [run_claude]: " name
 name=${name:-run_claude}
@@ -82,13 +87,14 @@ read -r -p "$t_def [claude]: " def
 def=${def:-claude}
 [ "$def" = 'shell' ] && def=''
 
-# --- install ------------------------------------------------------------------
-mkdir -p "$bin_dir" "$cfg_dir"
+# --- install --------------------------------------------------------------------
+mkdir -p "$bin_dir" "$cfg_dir" "$share_dir/lang"
 cp "$here/keep-ssh-agent-alive" "$bin_dir/$name"
 chmod +x "$bin_dir/$name"
+cp "$here"/lang/*.sh "$share_dir/lang/"
 
 esc=$(printf '%s' "$def" | sed "s/'/'\\\\''/g")
-printf "language='%s'\ndefault_command='%s'\nsession_prefix='agent'\nmouse='off'\n" \
+printf "language='%s'\ndefault_command='%s'\nsession_prefix='agent'\nmouse='off'\nmax_hours='0'\n" \
   "$language" "$esc" >"$cfg_dir/config"
 
 echo
@@ -97,7 +103,6 @@ case ":$PATH:" in
   *":$bin_dir:"*) ;;
   *)
     echo
-    # shellcheck disable=SC2088,SC2016  # literal text for the user to copy
     echo "$t_path1"
     # shellcheck disable=SC2016
     echo '  export PATH="$HOME/.local/bin:$PATH"'

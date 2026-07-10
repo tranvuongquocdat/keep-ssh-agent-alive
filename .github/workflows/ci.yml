@@ -12,10 +12,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: shellcheck
-        run: shellcheck keep-ssh-agent-alive install.sh
+        run: shellcheck keep-ssh-agent-alive install.sh lang/*.sh
       - name: bash syntax
         run: |
-          for f in keep-ssh-agent-alive install.sh; do bash -n "$f"; done
+          for f in keep-ssh-agent-alive install.sh lang/*.sh; do bash -n "$f"; done
 
   install:
     name: install on ${{ matrix.os }}
@@ -37,6 +37,8 @@ jobs:
       - name: Verify install
         run: |
           test -x "$HOME/.local/bin/ksa-test"
+          test -f "${XDG_DATA_HOME:-$HOME/.local/share}/keep-ssh-agent-alive/lang/en.sh"
+          test -f "${XDG_DATA_HOME:-$HOME/.local/share}/keep-ssh-agent-alive/lang/vi.sh"
           grep -q "language='en'" "${XDG_CONFIG_HOME:-$HOME/.config}/keep-ssh-agent-alive/config"
           grep -q "default_command='claude'" "${XDG_CONFIG_HOME:-$HOME/.config}/keep-ssh-agent-alive/config"
           # Without a terminal it should refuse politely, not crash
