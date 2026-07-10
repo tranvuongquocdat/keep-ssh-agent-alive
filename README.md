@@ -46,6 +46,7 @@ running, it simply tells you so.
 │ ❯ agent-1     ● claude · attached   ││ > run the test suite       │
 │   agent-2     ● claude              ││ ⎿  42 passed, 0 failed     │
 │   build       ○ idle                ││                            │
+│   ← Back                            ││                            │
 ╰─────────────────────────────────────╯╰────────────────────────────╯
 ```
 
@@ -73,6 +74,7 @@ It always asks before stopping anything:
 │   Stop all sessions                 │
 │ ✓ agent-1     ● claude              │
 │ ❯ build       ○ idle                │
+│   ← Back                            │
 ╰─────────────────────────────────────╯
 ```
 

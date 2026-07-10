@@ -45,6 +45,7 @@ menu sẽ báo rõ.
 │ ❯ agent-1     ● claude · đang mở    ││ > chạy bộ test             │
 │   agent-2     ● claude              ││ ⎿  42 passed, 0 failed     │
 │   build       ○ chờ                 ││                            │
+│   ← Quay lại                        ││                            │
 ╰─────────────────────────────────────╯╰────────────────────────────╯
 ```
 
@@ -71,6 +72,7 @@ Phiên mới khởi động **tại đúng thư mục bạn mở menu**, nên ag
 │   Tắt tất cả các phiên              │
 │ ✓ agent-1     ● claude              │
 │ ❯ build       ○ chờ                 │
+│   ← Quay lại                        │
 ╰─────────────────────────────────────╯
 ```
 
