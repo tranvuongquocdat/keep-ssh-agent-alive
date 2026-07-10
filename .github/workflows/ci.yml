@@ -32,8 +32,8 @@ jobs:
           else
             sudo apt-get update && sudo apt-get install -y tmux fzf
           fi
-      - name: Run installer (answers = English, name ksa-test, default command)
-        run: printf '1\nksa-test\n\n' | ./install.sh
+      - name: Run installer (English, custom name ksa-test, default command)
+        run: printf '1\n2\nksa-test\n\n' | ./install.sh
       - name: Verify install
         run: |
           test -x "$HOME/.local/bin/ksa-test"

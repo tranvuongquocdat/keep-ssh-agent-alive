@@ -131,8 +131,9 @@ cd keep-ssh-agent-alive
 Trình cài đặt hỏi ba câu, câu nào cũng có sẵn đáp án mặc định:
 
 1. **Ngôn ngữ** — English hoặc Tiếng Việt, cho toàn bộ menu và thông báo
-2. **Tên lệnh** — thứ bạn sẽ gõ để mở menu (mặc định `run_claude`). Nếu tên
-   đã tồn tại trên hệ thống, sẽ có cảnh báo.
+2. **Tên lệnh** — thứ bạn sẽ gõ để mở menu. Dùng mặc định `run_claude` hoặc
+   tự đặt tên khác; nếu tên đã tồn tại trên hệ thống, sẽ có cảnh báo và cho
+   chọn lại.
 3. **Lệnh mặc định** — chương trình phiên mới sẽ chạy (mặc định `claude`;
    có người thích đặt là `claude --dangerously-skip-permissions` chẳng hạn)
 

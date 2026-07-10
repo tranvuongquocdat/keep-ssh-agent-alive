@@ -29,9 +29,13 @@ if [ "$language" = 'vi' ]; then
   t_now='Cài ngay? [Y/n]:'
   t_self='Vui lòng tự cài các gói trên rồi chạy lại tập tin này.'
   t_no_pm='Không tìm thấy trình quản lý gói quen thuộc. Vui lòng tự cài rồi chạy lại.'
-  t_name='Tên lệnh'
+  t_name_title='Tên lệnh — thứ bạn sẽ gõ để mở menu'
+  t_name_default='Dùng mặc định:'
+  t_name_custom='Tự đặt tên khác'
+  t_name_enter='Nhập tên lệnh (Enter để quay lại):'
   t_name_rule='Chỉ dùng chữ, số, _ và -.'
-  t_conflict='Lưu ý: lệnh này đã tồn tại trên hệ thống, nên chọn tên khác.'
+  t_conflict='Lệnh này đã tồn tại trên hệ thống.'
+  t_use_anyway='Vẫn dùng tên này? [y/N]:'
   t_def="Lệnh mặc định cho phiên mới (gõ 'shell' nếu chỉ cần shell)"
   t_done='Đã cài tại:'
   t_path1='Thư mục ~/.local/bin chưa nằm trong PATH. Thêm dòng sau vào ~/.bashrc hoặc ~/.zshrc:'
@@ -41,9 +45,13 @@ else
   t_now='Install now? [Y/n]:'
   t_self='Please install the packages above yourself, then run this again.'
   t_no_pm='No familiar package manager found. Please install manually, then run this again.'
-  t_name='Command name'
+  t_name_title='Command name — what you will type to open the menu'
+  t_name_default='Use the default:'
+  t_name_custom='Choose your own name'
+  t_name_enter='Type a name (press Enter to go back):'
   t_name_rule='Letters, digits, _ and - only.'
-  t_conflict='Note: this command already exists on this system; consider a different name.'
+  t_conflict='This command already exists on this system.'
+  t_use_anyway='Use this name anyway? [y/N]:'
   t_def="Default command for new sessions (type 'shell' for a plain shell)"
   t_done='Installed at:'
   # shellcheck disable=SC2088  # literal text for the user to read
@@ -75,13 +83,29 @@ if [ "${#missing[@]}" -gt 0 ]; then
 fi
 
 # --- questions ------------------------------------------------------------------
-echo
-read -r -p "$t_name [run_claude]: " name
-name=${name:-run_claude}
-case $name in
-  *[!a-zA-Z0-9_-]*) echo "$t_name_rule"; exit 1 ;;
-esac
-command -v "$name" >/dev/null 2>&1 && echo "⚠ $t_conflict"
+while true; do
+  echo
+  echo "$t_name_title"
+  echo "  1) $t_name_default run_claude"
+  echo "  2) $t_name_custom"
+  read -r -p "[1]: " nc
+  case ${nc:-1} in
+    2*)
+      read -r -p "$t_name_enter " name
+      [ -z "$name" ] && continue
+      ;;
+    *) name='run_claude' ;;
+  esac
+  case $name in
+    *[!a-zA-Z0-9_-]*) echo "$t_name_rule"; continue ;;
+  esac
+  if command -v "$name" >/dev/null 2>&1; then
+    echo "⚠ $t_conflict"
+    read -r -p "$t_use_anyway " a
+    case $a in [yY]*) break ;; *) continue ;; esac
+  fi
+  break
+done
 
 read -r -p "$t_def [claude]: " def
 def=${def:-claude}
